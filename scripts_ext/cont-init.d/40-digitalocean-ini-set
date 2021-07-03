@@ -1,0 +1,25 @@
+#!/usr/bin/with-contenv bash
+
+echo -e "Variables set:\\n\
+DNSPLUGIN=${DNSPLUGIN}\\n\
+DIGITALOCEAN_API_TOKEN=${DIGITALOCEAN_API_TOKEN}\\n\
+USER_MULTI_DOMAINS=${USER_MULTI_DOMAINS}\\n\
+USER_HOSTNAME=${USER_HOSTNAME}\\n"
+
+EXIST_API_KEY=$(cat /config/dns-conf/.digitalocean-secret)
+
+if [ -z "${EXIST_API_KEY}" ] || ([ -n "${DNSPLUGIN}" ] && [ "${DNSPLUGIN}" == "digitalocean" ])
+then
+    if [ -z "${DIGITALOCEAN_API_TOKEN}" ]
+    then
+        printf "${RED}DIGITALOCEAN_API_TOKEN not provided.\nExiting...${END}\n"
+        exit 1
+    else
+        DO_INI=/defaults/dns-conf/digitalocean.ini
+        sed -i "s/dns_digitalocean_token/#dns_digitalocean_token/g" ${DO_INI}
+        echo "dns_digitalocean_token = ${DIGITALOCEAN_API_TOKEN}" >> ${DO_INI}
+        ln -s /defaults/dns-conf/digitalocean.ini /defaults/dns-conf/.digitalocean-secret
+    fi
+fi
+
+exit 0

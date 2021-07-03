@@ -1,0 +1,68 @@
+#!/usr/bin/with-contenv bash
+
+echo -e "Variables set:\\n\
+EMAIL=${EMAIL}\\n\
+STAGING=${STAGING}\\n\
+DNSPLUGIN=${DNSPLUGIN}\\n\
+DIGITALOCEAN_API_TOKEN=${DIGITALOCEAN_API_TOKEN}\\n\
+USER_MULTI_DOMAINS=${USER_MULTI_DOMAINS}\\n\
+USER_HOSTNAME=${USER_HOSTNAME}\\n"
+
+RSA_KEY_SIZE=4096
+
+# Request for letsencrypt cert for each domain, e.g abc.com,xyz.com,somedomain.com
+DOM_LIST=($(echo ${USER_MULTI_DOMAINS} | tr "," " "))
+
+PSUEDO_HOSTNAME=$(hostname)
+USER_HOSTNAME=${USER_HOSTNAME:-${PSUEDO_HOSTNAME}}
+
+for each_domain in "${DOM_LIST[@]}"
+do
+  if [ "${USER_HOSTNAME}" == "@" ]
+  then
+    DOMAIN_CERT=${each_domain}
+    WILDCARD_CERT=*.${each_domain}
+  else
+    DOMAIN_CERT=${USER_HOSTNAME}.${each_domain}
+    WILDCARD_CERT=*.${USER_HOSTNAME}.${each_domain}
+  fi
+
+  cert_expiry=$(certbot certificates --cert-name ${DOMAIN_CERT} | grep Expiry | awk '{print $3}')
+  within_next_5_days=$(date --rfc-3339=date -d "+5 days")
+
+  if [[ "$within_next_5_days" > "$cert_expiry" ]]
+  then
+
+    if [ "$STAGING" = "true" ]
+    then
+        STAGING_OPT="--staging"
+    else
+        STAGING_OPT=""
+    fi
+
+    printf "\n\nStart request-cert for ${DOMAIN_CERT}\n"
+
+    certbot certonly -n --agree-tos \
+    -m ${EMAIL} \
+    --cert-name ${DOMAIN_CERT} \
+    -d ${DOMAIN_CERT} \
+    -d ${WILDCARD_CERT} \
+    --dns-digitalocean \
+    --dns-digitalocean-credentials /config/dns-conf/digitalocean.ini \
+    --rsa-key-size ${RSA_KEY_SIZE} \
+    ${STAGING_OPT}
+  else
+    echo "Valid cert for ${DOMAIN_CERT} exist. Abort request for new cert."
+  fi
+
+  # Build bundle after certs received.
+  printf "\n\nGenerating cert bundle for ${DOMAIN_CERT}\n"
+
+  rm -f "/etc/letsencrypt/live/${DOMAIN_CERT}/priv-fullchain-bundle.pem" && echo -n -e '.\r'
+  cat "/etc/letsencrypt/live/${DOMAIN_CERT}/fullchain.pem" | tee "/etc/letsencrypt/live/${DOMAIN_CERT}/priv-fullchain-bundle.pem" > /dev/null && echo -n -e '..\r'
+  cat "/etc/letsencrypt/live/${DOMAIN_CERT}/privkey.pem" | tee -a "/etc/letsencrypt/live/${DOMAIN_CERT}/priv-fullchain-bundle.pem" > /dev/null && echo -n -e '...\r'
+  chmod 0644 "/etc/letsencrypt/live/${DOMAIN_CERT}/priv-fullchain-bundle.pem"  && echo -n -e '....\r'
+  chmod 0655 "/etc/letsencrypt/live/"  && echo -n -e '....\r'
+done
+
+exit 0
