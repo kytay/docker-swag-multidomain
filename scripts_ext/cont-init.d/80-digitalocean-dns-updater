@@ -57,6 +57,7 @@ then
     echo "*/5 * * * * /app/do-dnsupdate.sh >> /tmp/last-dns-update.log" >> $(date --rfc-3339=date)_crontab
     echo "" >> $(date --rfc-3339=date)_crontab
     crontab $(date --rfc-3339=date)_crontab
+    chmod +x /app/*.sh
 fi
 
 PUBLIC_IP=$(curl -L https://api.ipify.org/ || curl -L https://ipv4.icanhazip.com/)
