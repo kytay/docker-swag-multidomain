@@ -54,7 +54,7 @@ if [ -z "$EXIST_DOCTL" ]
 then
     download_and_intstall_doctl
     crontab -l > $(date --rfc-3339=date)_crontab
-    echo "*/5 * * * * /app/do-dnsupdate.sh >> /tmp/last-dns-update.log" >> $(date --rfc-3339=date)_crontab
+    echo "*/5   *   *   *   *   /app/do-dnsupdate.sh >> /tmp/last-dns-update.log 2>&1" >> $(date --rfc-3339=date)_crontab
     echo "" >> $(date --rfc-3339=date)_crontab
     crontab $(date --rfc-3339=date)_crontab
     chmod +x /app/*.sh
@@ -84,13 +84,13 @@ do
         --record-type A \
         --record-name="${USER_HOSTNAME}" \
         --record-data="${PUBLIC_IP}" \
-        -t ${DIGITALOCEAN_API_TOKEN}
+        -t ${DIGITALOCEAN_API_TOKEN} &
     else
         echo "Updating DNS A record ${DNS_A_RECORD_ID}..."
         doctl compute domain records update ${EACH_DOMAIN} \
         --record-id="${DNS_A_RECORD_ID}" \
         --record-data="${PUBLIC_IP}" \
-        -t ${DIGITALOCEAN_API_TOKEN}
+        -t ${DIGITALOCEAN_API_TOKEN} &
     fi
 
     if [ -z "${DNS_WILDCARD_CNAME_RECORD_ID}" ]
@@ -100,13 +100,13 @@ do
         --record-type CNAME \
         --record-name ${DNS_WILDCARD_CNAME_RECORD_NAME} \
         --record-data ${DNS_WILDCARD_CNAME_RECORD_DATA} \
-        -t ${DIGITALOCEAN_API_TOKEN}
+        -t ${DIGITALOCEAN_API_TOKEN} &
     else
         echo "Updating DNS CNAME record ${DNS_WILDCARD_CNAME_RECORD_ID}..."
         doctl compute domain records update ${EACH_DOMAIN} \
         --record-id ${DNS_WILDCARD_CNAME_RECORD_ID} \
         --record-data ${DNS_WILDCARD_CNAME_RECORD_DATA} \
-        -t ${DIGITALOCEAN_API_TOKEN}
+        -t ${DIGITALOCEAN_API_TOKEN} &
     fi
 
 done
