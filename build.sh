@@ -1,9 +1,10 @@
 #!/bin/bash
 
 cd ./docker-swag && \
-git submodule init && git submodule update && \
-cp -f ../scripts_ext/cont-init.d/* root/etc/cont-init.d && \
-cp -f ../scripts_ext/cont-init.d/80-digitalocean-dns-updater root/app/do-dnsupdate.sh && \
+rm $(git status -s | awk '{print $2}' | tr '\n' ' ') 
+git submodule init && \
+git submodule update && \
+cp -f ../scripts_ext/cont-init.d/* root/etc/cont-init.d
 
 docker build \
   --no-cache \
