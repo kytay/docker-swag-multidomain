@@ -53,11 +53,6 @@ download_and_intstall_doctl() {
 if [ -z "$EXIST_DOCTL" ]
 then
     download_and_intstall_doctl
-    crontab -l > $(date --rfc-3339=date)_crontab
-    echo "*/5   *   *   *   *   /app/do-dnsupdate.sh >> /tmp/last-dns-update.log 2>&1" >> $(date --rfc-3339=date)_crontab
-    echo "" >> $(date --rfc-3339=date)_crontab
-    crontab $(date --rfc-3339=date)_crontab
-    chmod +x /app/*.sh
 fi
 
 PUBLIC_IP=$(curl -L https://api.ipify.org/ || curl -L https://ipv4.icanhazip.com/)
@@ -111,6 +106,7 @@ do
 
 done
 
+echo "DNS Last Updated $(date)" >> /tmp/dns-update.log
 echo "DNS Last Updated $(date)"
 
 exit 0

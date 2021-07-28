@@ -1,0 +1,6 @@
+#!/usr/bin/with-contenv bash
+
+cp /etc/cont-init.d/*-digitalocean-dns-updater /app/do-dnsupdate.sh
+ln -sf /app/do-dnsupdate.sh /etc/periodic/5min/do-dnsupdate
+
+exit 0

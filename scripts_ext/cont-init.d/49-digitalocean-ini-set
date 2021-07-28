@@ -22,7 +22,4 @@ then
     fi
 fi
 
-cp /etc/cont-init.d/*-digitalocean-dns-updater /app/do-dnsupdate.sh
-ln -s /app/do-dnsupdate.sh /etc/periodic/15min/do-dnsupdate.sh
-
 exit 0
