@@ -1,3 +1,4 @@
 [submodule "docker-swag"]
 	path = docker-swag
-	url = https://github.com/kytay/docker-swag
+	url = https://github.com/linuxserver/docker-swag
+	#url = https://github.com/kytay/docker-swag
