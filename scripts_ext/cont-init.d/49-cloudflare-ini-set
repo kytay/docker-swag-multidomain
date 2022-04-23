@@ -1,0 +1,18 @@
+#!/usr/bin/with-contenv bash
+
+echo -e "Variables set:\\n\
+DNSPLUGIN=${DNSPLUGIN}\\n\
+CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}\\n\
+USER_MULTI_DOMAINS=${USER_MULTI_DOMAINS}\\n\
+USER_HOSTNAME=${USER_HOSTNAME}\\n"
+
+if [[ "${DNSPLUGIN}" == "cloudflare" ]]
+then
+    CF_INI=/defaults/dns-conf/cloudflare.ini
+    sed -i "s/^dns_cloudflare_email/#dns_cloudflare_email/g" ${CF_INI}
+    sed -i "s/^dns_cloudflare_api_key/#dns_cloudflare_api_key/g" ${CF_INI}
+    sed -i "s/^dns_cloudflare_api_token/#dns_cloudflare_api_token/g" ${CF_INI}
+    echo "dns_cloudflare_api_token = ${CLOUDFLARE_API_TOKEN}" >> ${CF_INI}
+fi
+
+exit 0

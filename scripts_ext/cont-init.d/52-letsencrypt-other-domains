@@ -4,6 +4,7 @@ echo -e "Variables set:\\n\
 EMAIL=${EMAIL}\\n\
 STAGING=${STAGING}\\n\
 DNSPLUGIN=${DNSPLUGIN}\\n\
+CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}\\n\
 DIGITALOCEAN_API_TOKEN=${DIGITALOCEAN_API_TOKEN}\\n\
 USER_MULTI_DOMAINS=${USER_MULTI_DOMAINS}\\n\
 USER_HOSTNAME=${USER_HOSTNAME}\\n"
@@ -47,8 +48,8 @@ do
     --cert-name ${DOMAIN_CERT} \
     -d ${DOMAIN_CERT} \
     -d ${WILDCARD_CERT} \
-    --dns-digitalocean \
-    --dns-digitalocean-credentials /config/dns-conf/digitalocean.ini \
+    --dns-cloudflare \
+    --dns-cloudflare-credentials /config/dns-conf/cloudflare.ini \
     --rsa-key-size ${RSA_KEY_SIZE} \
     ${STAGING_OPT}
   else

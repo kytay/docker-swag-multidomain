@@ -1,0 +1,55 @@
+#!/usr/bin/with-contenv bash
+
+echo -e "Variables set:\\n\
+DNSPLUGIN=${DNSPLUGIN}\\n\
+CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}\\n\
+USER_MULTI_DOMAINS=${USER_MULTI_DOMAINS}\\n\
+USER_HOSTNAME=${USER_HOSTNAME}\\n"
+
+export CF_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+
+# Required software - remove apk add for alpine
+apk add openssl curl jq
+
+DOM_LIST=($(echo ${USER_MULTI_DOMAINS} | tr "," " "))
+
+# Check if flarectl exist, if not download latest version and setup
+if ! command -v flarectl &> /dev/null
+then
+    GH_USER_REPO=cloudflare/cloudflare-go    
+    GH_RELEASE_LATEST_QUERY_API=https://api.github.com/repos/${GH_USER_REPO}/releases/latest
+    GH_RELEASE_LATEST_VERSION=$(curl -s ${GH_RELEASE_LATEST_QUERY_API} | grep "tag_name" | grep -Eo 'v[^\"]*')
+    GH_RELEASE_LATEST_URL=$(curl -s ${GH_RELEASE_LATEST_QUERY_API} | grep "browser_download_url.*linux_amd64.tar.xz" | grep -Eo 'https://[^\"]*')
+    TMP_DIR=$(openssl rand -hex 4)
+
+    mkdir ./${TMP_DIR} && \
+    echo "Downloading ${GH_RELEASE_LATEST_URL} to ./${TMP_DIR}" && \
+    $(cd /${TMP_DIR} && curl -LO ${GH_RELEASE_LATEST_URL}) && \
+    tar xvf ./${TMP_DIR}/*linux_amd64.tar.xz -C ./${TMP_DIR} && \
+    chmod +x ./${TMP_DIR}/flarectl && \
+    mv ./${TMP_DIR}/flarectl /usr/bin/flarectl && \
+    rm -Rf ./${TMP_DIR}
+fi
+
+# Check your current public ip
+PUBLIC_IP=\"$(curl -Ls https://api.ipify.org/ || curl -L https://ipv4.icanhazip.com/)\"
+
+# Check all domains and update cloudflare ddns
+for EACH_DOMAIN in "${DOM_LIST[@]}"
+do
+    printf "\n\n"
+    echo "Checking Cloudflare for ${EACH_DOMAIN}..."
+    flarectl --json d l ${EACH_DOMAIN} | jq '.[] | select(.Type == "A")' > /tmp/dns-query || continue
+
+    if [[ ! ${PUBLIC_IP} == $(jq '.Content' /tmp/dns-query) ]]; then
+        echo "Current IP is ${PUBLIC_IP}, but DDNS reflect $(jq '.Content' /tmp/dns-query), updating..."
+        flarectl d d --zone=${EACH_DOMAIN} --id=$(jq '.ID' /tmp/dns-query | tr -d '"')
+        flarectl d c --zone=${EACH_DOMAIN} --name=@ \
+        --proxy=true \
+        --type=A \
+        --content=$(echo ${PUBLIC_IP} | tr -d '"')
+        echo "DDNS updated, see details above."
+    else
+        echo "DDNS is up-to-date, ${PUBLIC_IP} on $(date -R)"
+    fi 
+done

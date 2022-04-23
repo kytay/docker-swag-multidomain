@@ -1,0 +1,5 @@
+#!/usr/bin/with-contenv bash
+
+cp /app/periodic/15min/* /etc/periodic/15min
+
+exit 0
